@@ -8,7 +8,6 @@ end entity onyarv_alu_tb;
 
 architecture rtl of onyarv_alu_tb is
     constant CLK_PERIOD: time := 10 ns;
-
     component onyarv_alu port (
         rst_i: in std_logic;
         clk_i: in std_logic;
@@ -21,6 +20,7 @@ architecture rtl of onyarv_alu_tb is
         res_valid_o: out std_logic
     );
     end component;
+
 
     signal rst_i: std_logic := '1';
     signal clk_i: std_logic := '0';
@@ -46,44 +46,97 @@ begin
         res_valid_o => res_valid_o
     );
 
+    
+
     proc_name: process
     begin
+        shift_arith_i <= '0';
         wait for 50 ns;
         rst_i <= '0';
         op_i <= "000";  --add/sub
         arg1_i <= std_logic_vector(to_signed(12, arg1_i'length));
         arg2_i <= std_logic_vector(to_signed(6, arg1_i'length));
         wait for 10 ns;
-        wait until rising_edge(clk_i);
+        wait until falling_edge(clk_i);
         op_i <= "000";  --add/sub
         --Regular add
         arg1_i <= std_logic_vector(to_signed(6, arg1_i'length));
         arg2_i <= std_logic_vector(to_signed(2, arg1_i'length));
-        wait until rising_edge(clk_i);
+        wait until falling_edge(clk_i);
         --Add pos to neg
         arg1_i <= std_logic_vector(to_signed(6, arg1_i'length));
         arg2_i <= std_logic_vector(to_signed(-2, arg1_i'length));
-        wait until rising_edge(clk_i);
+        wait until falling_edge(clk_i);
         -- sub 
         alu_sub_i <= '1';
         arg1_i <= std_logic_vector(to_signed(2, arg1_i'length));
         arg2_i <= std_logic_vector(to_signed(6, arg1_i'length));
-        wait until rising_edge(clk_i);
+        wait until falling_edge(clk_i);
         alu_sub_i <= '0';
         --binops
         op_i <= "110"; --or
         
         arg1_i <= std_logic_vector(to_unsigned(16#00AAFF55#, arg1_i'length));
         arg2_i <= std_logic_vector(to_unsigned(16#0F5500AA#, arg2_i'length));
-        wait until rising_edge(clk_i);
+        wait until falling_edge(clk_i);
         op_i <= "100"; --xor
         arg1_i <= std_logic_vector(to_unsigned(16#00AAFF55#, arg1_i'length));
         arg2_i <= std_logic_vector(to_unsigned(16#0F5500FF#, arg2_i'length));
-        wait until rising_edge(clk_i);
+        wait until falling_edge(clk_i);
         op_i <= "111"; --and
         arg1_i <= std_logic_vector(to_unsigned(16#00AAFF55#, arg1_i'length));
         arg2_i <= std_logic_vector(to_unsigned(16#0F5500FF#, arg2_i'length));
-        wait until rising_edge(clk_i);
+        wait until falling_edge(clk_i);
+
+        --shifts
+        op_i <= "001"; --shift left
+        arg1_i <= std_logic_vector(to_unsigned(16#00000001#, arg1_i'length));
+        arg2_i <= std_logic_vector(to_unsigned(16#00000000#, arg1_i'length));
+        wait until falling_edge(clk_i);
+
+        arg1_i <= std_logic_vector(to_unsigned(16#00000001#, arg1_i'length));
+        arg2_i <= std_logic_vector(to_unsigned(16#00000001#, arg1_i'length));
+        wait until falling_edge(clk_i);
+
+        arg1_i <= std_logic_vector(to_unsigned(16#00000001#, arg1_i'length));
+        arg2_i <= std_logic_vector(to_unsigned(16#00000004#, arg1_i'length));
+        wait until rising_edge(res_valid_o);
+        wait until falling_edge(clk_i);
+
+        op_i <= "101"; --shift righ, logical
+        shift_arith_i <= '0';
+
+        arg1_i <= (31=>'1', others=>'0');
+        arg2_i <= std_logic_vector(to_unsigned(16#00000000#, arg1_i'length));
+        wait until falling_edge(clk_i);
+
+        arg1_i <= (31=>'1', others=>'0');
+        arg2_i <= std_logic_vector(to_unsigned(16#00000001#, arg1_i'length));
+        wait until falling_edge(clk_i);
+
+        arg1_i <= (31=>'1', others=>'0');
+        arg2_i <= std_logic_vector(to_unsigned(16#00000004#, arg1_i'length));
+        wait until rising_edge(res_valid_o);
+        wait until falling_edge(clk_i);
+
+        op_i <= "101"; --shift right 
+        shift_arith_i <= '1';
+
+        arg1_i <= (31=>'1', others=>'0');
+        arg2_i <= std_logic_vector(to_unsigned(16#00000000#, arg1_i'length));
+        wait until falling_edge(clk_i);
+
+        arg1_i <= (31=>'1', others=>'0');
+        arg2_i <= std_logic_vector(to_unsigned(16#00000001#, arg1_i'length));
+        wait until falling_edge(clk_i);
+
+        arg1_i <= (31=>'1', others=>'0');
+        arg2_i <= std_logic_vector(to_unsigned(16#00000004#, arg1_i'length));
+        wait until rising_edge(res_valid_o);
+        wait until falling_edge(clk_i);
+
+
+
 
         wait;
     end process proc_name;

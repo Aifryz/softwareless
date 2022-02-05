@@ -21,7 +21,7 @@ control_sim: $(sources) $(sim_sources)
 alu_sim: $(sources) $(sim_sources)
 	$(GHDL) -a $(sources) $(sim_sources)
 	$(GHDL) -e onyarv_alu_tb
-	$(GHDL) -r onyarv_alu_tb --stop-time=10us --vcd=alu.vcd
+	$(GHDL) -r onyarv_alu_tb --stop-time=10us --wave=alu.ghw
 
 .PHONY: clean 
 clean:

@@ -39,6 +39,7 @@ begin
         if rst_i = '1' then
             shifter_busy <= '0';
         elsif rising_edge(clk_i) then
+            if shifter_busy = '0' then
             case op_i is
                 when OP_SUB_ADD =>
                     if alu_sub_i = '1' then
@@ -57,10 +58,12 @@ begin
                         res_o <= arg1_i;
                     elsif shamt_var = "00001" then
                         res_valid_o <= '1';
-                        res_o <= arg1_i(31 downto 1) & '0';
+                        res_o <= arg1_i(30 downto 0) & '0';
                     else
+                        res_valid_o <= '0';
                         shifter_busy <= '1';
-                        shifter <= arg1_i(31 downto 1) & '0';
+                        dir <= '0';
+                        shifter <= arg1_i(30 downto 0) & '0';
                         shamt <= shamt_var-1;
                     end if; 
                     
@@ -83,11 +86,11 @@ begin
                     res_o <= arg1_i xor arg2_i;
                     res_valid_o <= '1';
                 when OP_SR =>
-                if shamt = "00000" then
+                if shamt_var = "00000" then
                     -- do nothing
                     res_valid_o <= '1';
                     res_o <= arg1_i;
-                elsif shamt = "00001" then
+                elsif shamt_var = "00001" then
                     res_valid_o <= '1';
                     if shift_arith_i = '1' then
                         -- arith shift
@@ -99,6 +102,8 @@ begin
                     --multi cylce shift 
                     res_valid_o <= '0';
                     shifter_busy <= '1';
+                    dir <= '1';
+                    arith <= shift_arith_i;
                     if shift_arith_i = '1' then
                         -- arith shift
                         shifter <= arg1_i(31) & arg1_i(31 downto 1);
@@ -117,6 +122,41 @@ begin
                 when others =>
                     
             end case;
+        else
+            -- shifter op
+            if dir = '0' then -- shift left
+                if shamt = 1 then -- last op
+                    res_o <= shifter(30 downto 0) & '0';
+                    shamt <= "00000";
+                    shifter_busy <= '0';
+                    res_valid_o <= '1';
+                else
+                    shifter <= shifter(30 downto 0) & '0';
+                    shamt <= shamt-1;
+                end if;
+            else
+                if shamt = 1 then -- last op
+                    if arith = '1' then
+                        -- arith shift
+                        res_o <= shifter(31) & shifter(31 downto 1);
+                    else
+                        res_o <= '0' & shifter(31 downto 1);
+                    end if;
+                    shamt <= "00000";
+                    shifter_busy <= '0';
+                    res_valid_o <= '1';
+                else
+                    if arith = '1' then
+                        -- arith shift
+                        shifter <= shifter(31) & shifter(31 downto 1);
+                    else
+                        shifter <= '0' & shifter(31 downto 1);
+                    end if;
+                    shamt <= shamt-1;
+                end if;
+            end if;
+        end if;
+
         end if;
     end process core;
     

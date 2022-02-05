@@ -28,4 +28,7 @@ fp-info-cache
 # GHDL files
 *.cf
 *.vcd
+*.ghw
+
+*.o
 
