@@ -27,7 +27,7 @@ end entity onyarv_control;
 
 architecture rtl of onyarv_control is
     -- Fetch-decode, execute, register writeback, memory access, trap
-    type cpu_state_t is (FD, EXE, WB, MEM, TRAP);
+    type cpu_state_t is (FETCH, DECODE, EXECUTE, WB, TRAP);
 
     signal instr: std_logic_vector(31 downto 0); -- Current fetched instruction
     signal state: cpu_state_t;
@@ -63,36 +63,31 @@ begin
     instr_load: process(clk_i, rst_i)
     begin
         if rst_i = '1' then
-            state <= FD;
+            state <= FETCH;
             instr_ready <= '1';
             pc <= (others=>'0');
         elsif rising_edge(clk_i) then
-            if state=FD and instr_valid_i = '1' and  instr_ready = '1' then
+            if state=FETCH and instr_valid_i = '1' and  instr_ready = '1' then
                 instr_ready <= '0';
-                -- Decode
                 
                 -- Decode immediates
-                i_imm <= imm_sign_ext & instr(30 downto 20);
-                s_imm <= imm_sign_ext & instr(30 downto 25) & instr(11 downto 7);
-                b_imm <= imm_sign_ext(31 downto 12) & instr(7) & instr(30 downto 25) & instr(11 downto 8) & '0';
-                u_imm <= imm_sign_ext(31) & instr(30 downto 12) & "000000000000";
-                j_imm <= imm_sign_ext(31 downto 20) & instr(19 downto 12) & instr(20) & instr(30 downto 21) & '0';
+                i_imm <= imm_sign_ext & instr_i(30 downto 20);
+                s_imm <= imm_sign_ext & instr_i(30 downto 25) & instr_i(11 downto 7);
+                b_imm <= imm_sign_ext(31 downto 12) & instr_i(7) & instr_i(30 downto 25) & instr_i(11 downto 8) & '0';
+                u_imm <= imm_sign_ext(31) & instr_i(30 downto 12) & "000000000000";
+                j_imm <= imm_sign_ext(31 downto 20) & instr_i(19 downto 12) & instr_i(20) & instr_i(30 downto 21) & '0';
 
                 -- Decode registers
-                rd <= instr(11 downto 7);
-                rs1 <= instr(19 downto 15);
-                rs2 <= instr(24 downto 20);
+                rd <= instr_i(11 downto 7);
+                rs1 <= instr_i(19 downto 15);
+                rs2 <= instr_i(24 downto 20);
 
-                -- ALU control lines
-                case opcode is
-                    when OP_INSTR =>
-                        rimm_o <= '0';
-                    when OPIMM_INSTR =>
-                        rimm_o <= '1';
-                    when others =>
-                end case;
+                --store instr in reg for other phases
+                instr <= instr_i;
 
-                state <= EXE; -- change state to execute
+                state <= DECODE;
+            elsif state=DECODE then
+                -- 
             end if;
         end if;
     end process instr_load; 

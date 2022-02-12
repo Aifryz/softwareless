@@ -58,7 +58,7 @@ begin
                     --done, decompress
                     --TODO
                     instr_valid_o <= '1';
-                    instr_o <= x"deadcafe";
+                    instr_o <= x"0000"&cached_halfword;
                 else
                     --we have only the lower halfword, we need to fetch upper part
                     ins_stb_o <= '1';
@@ -99,7 +99,7 @@ begin
                         -- decompress lower and write to out 
                         --TODO
                         instr_valid_o <= '1';
-                        instr_o <= x"deadcafe";
+                        instr_o <= x"0000"&ins_dat_i(15 downto 0);
                     else
                         -- fetched valid address
                         instr_valid_o <= '1';
@@ -111,7 +111,7 @@ begin
                         --decompress higher and write to out
                         --TODO
                         instr_valid_o <= '1';
-                        instr_o <= x"deadcafe";
+                        instr_o <= x"0000"&ins_dat_i(31 downto 16);
                     else
                         -- need to fetch another word to get higher word of instruction
                         -- cache current word
@@ -137,7 +137,8 @@ begin
     else '0';
     
 
-    cached_compressed <= '1' when cached_halfword(1 downto 0) /= "11";
+    cached_compressed <= '1' when cached_halfword(1 downto 0) /= "11"
+    else '0';
     
     next_word_addr_unaligned <= std_logic_vector(unsigned(addr_i)+4);
     next_word_addr <= next_word_addr_unaligned(31 downto 2) & "00";

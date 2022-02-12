@@ -76,19 +76,25 @@ begin
         wait for 50 ns;
         wait until falling_edge(clk_i);
         load_i <= '1';
-        addr_i <= x"00000000"; -- load first word, simple aligned load
+        addr_i <= x"00000000"; -- not cached, aligned 32 bit
         wait until rising_edge(instr_valid_o);
         wait until falling_edge(clk_i);
-        addr_i <= x"00000004"; -- 2nd instr, 16 bit
+        addr_i <= x"00000004"; -- not cached 16, aligned
         wait until rising_edge(instr_valid_o);
         wait until falling_edge(clk_i);
-        addr_i <= x"00000006"; -- 2nd instr, 2nd 16 bit
+        addr_i <= x"00000006"; -- cached 16, not aligned
         wait until rising_edge(instr_valid_o);
         wait until falling_edge(clk_i);
-        addr_i <= x"00000008"; -- 3nd row, 3nd 16 bit
+        addr_i <= x"00000008"; -- not cached 16, aligned
         wait until rising_edge(instr_valid_o);
         wait until falling_edge(clk_i);
-        addr_i <= x"0000000A"; -- 32 bitter
+        addr_i <= x"0000000A"; -- cached, 32 not aligned
+        wait until rising_edge(instr_valid_o);
+        wait until falling_edge(clk_i);
+        addr_i <= x"00000016"; -- 32 bit not aligned, not cached
+        wait until rising_edge(instr_valid_o);
+        wait until falling_edge(clk_i);
+        addr_i <= x"0000001A"; -- 32 bit not aligned, cached
 
 
         wait for 1 us;
@@ -101,21 +107,21 @@ begin
 
    wb_data: process is
     variable mem: mem_arr := (
-        x"0000000F", -- 32 bit instruction, normal span
-        x"12385678", -- 16 bit instruction, then another 16 bit instruction
-        x"000F5678", -- 16 bit instruction, then not aligned lower word of 32 bit instruction
-        x"1238ABAB", -- remainder of 32 bit instruction, then not aligned 16 bit
-        x"12345678",
-        x"12345678",
-        x"12345678",
-        x"12345678"
+        x"0000100F", -- 32 bit instruction, normal span
+        x"22383678", -- 16 bit instruction, then another 16 bit instruction
+        x"400F5678", -- 16 bit instruction, then not aligned lower word of 32 bit instruction
+        x"62387BAB", -- remainder of 32 bit instruction, then not aligned 16 bit
+        x"823F967F",
+        x"A23FB67F",
+        x"C23FD67F",
+        x"E23F567F"
     );
     variable adr: integer;
    begin
     wait until rising_edge(ins_ack_i);
         --data <= data+1;
         -- get word address
-        adr := to_integer(unsigned(addr_i(5 downto 2)));
+        adr := to_integer(unsigned(ins_adr_o(5 downto 2)));
         ins_dat_i <= std_logic_vector(mem(adr));
         
    end process wb_data;
