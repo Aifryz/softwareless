@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 210 297"
+   width="132.49925mm"
+   height="16mm"
+   viewBox="0 0 132.49925 16"
    version="1.1"
    id="svg5"
    inkscape:version="1.1.2 (b8e25be833, 2022-02-05)"
@@ -28,8 +28,8 @@
      inkscape:snap-bbox="true"
      inkscape:snap-object-midpoints="true"
      inkscape:zoom="0.74029882"
-     inkscape:cx="743.61864"
-     inkscape:cy="366.06839"
+     inkscape:cx="343.10469"
+     inkscape:cy="156.69348"
      inkscape:window-width="1920"
      inkscape:window-height="1017"
      inkscape:window-x="-8"
@@ -43,7 +43,11 @@
      inkscape:snap-bbox-edge-midpoints="true"
      inkscape:bbox-paths="true"
      inkscape:snap-bbox-midpoints="true"
-     inkscape:snap-center="true" />
+     inkscape:snap-center="true"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
   <defs
      id="defs2">
     <linearGradient
@@ -86,7 +90,8 @@
   <g
      inkscape:label="CD"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(-51.755157,-55.510883)">
     <circle
        style="fill:#000000;stroke-width:0.533334;stroke-miterlimit:4;stroke-dasharray:none"
        id="path481"
@@ -168,5 +173,6 @@
   <g
      inkscape:groupmode="layer"
      id="layer2"
-     inkscape:label="Cross" />
+     inkscape:label="Cross"
+     transform="translate(-51.755157,-55.510883)" />
 </svg>
