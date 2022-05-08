@@ -5,11 +5,11 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 2
-Title ""
-Date ""
-Rev ""
-Comp ""
-Comment1 ""
+Title "7 seg led display"
+Date "2022-03-22"
+Rev "1"
+Comp "Robert Bicz"
+Comment1 "Licensed under CERN-OHL-P v2 or later"
 Comment2 ""
 Comment3 ""
 Comment4 ""

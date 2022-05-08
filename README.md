@@ -87,3 +87,8 @@ Yes, I know the rules are very NIHish, I hope that by following those rules I fi
 And for the ultimate goal: I want to be able to do the thing that the computers were solely designed for, taking pictures of cats and sending them to each other :)
 
 This list does not contain all goals that will be achieved and will be modified in time.
+
+## Licensing
+
+If not specified otherwise, all software in this repository is licensed under MIT license, all hardware is licensed under CERN-OHL-P
+Logo is licensed under CC BY-SA 3.0

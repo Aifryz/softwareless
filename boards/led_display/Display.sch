@@ -5,11 +5,11 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 2 2
-Title ""
+Title "7 seg led display"
 Date ""
-Rev ""
-Comp ""
-Comment1 ""
+Rev "1"
+Comp "Robert Bicz"
+Comment1 "Licensed under CERN-OHL-P v2 or later"
 Comment2 ""
 Comment3 ""
 Comment4 ""
@@ -3584,8 +3584,6 @@ Wire Wire Line
 	7700 6150 7700 3650
 Wire Wire Line
 	7700 3650 8150 3650
-Wire Bus Line
-	6150 3250 8950 3250
 Wire Wire Line
 	8950 4550 9250 4550
 Wire Wire Line
@@ -3603,6 +3601,8 @@ Wire Wire Line
 	6350 5550 6600 5550
 Wire Wire Line
 	7800 5550 8100 5550
+Wire Bus Line
+	6150 3250 8950 3250
 Wire Wire Line
 	6550 3350 9250 3350
 Wire Bus Line
