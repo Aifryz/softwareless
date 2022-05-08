@@ -1,4 +1,4 @@
-
+![Softwareless logo](softwareless_logo.svg "Softwareless logo")
 # Softwareless
 
 What if, all software disappeared?
