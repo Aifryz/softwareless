@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name keyboard)(type KiCad)(uri C:/Users/robal/Documents/softwareless/boards/lib/keyboard.pretty)(options "")(descr ""))
+)
