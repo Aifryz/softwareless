@@ -28,5 +28,10 @@ fetch_sim: $(sources) $(sim_sources)
 	$(GHDL) -e onyarv_fetch_tb
 	$(GHDL) -r onyarv_fetch_tb --stop-time=10us --wave=fetch.ghw
 
+decompress_sim:
+	$(GHDL) -a rtl/onyarv_decompress.vhd sim/onyarv_decompress_tb.vhd
+	$(GHDL) -e onyarv_decompress_tb
+	$(GHDL) -r onyarv_decompress_tb --stop-time=10us --wave=decompress.ghw
+
 .PHONY: clean 
 clean:
