@@ -37,7 +37,7 @@ begin
     variable imm12_ext6 : std_logic_vector(5 downto 0);
     variable imm20: std_logic_vector(19 downto 0);
     variable imm20_ext9: std_logic_vector(8 downto 0);
-    variable imm20_ext13: std_logic_vector(12 downto 0);
+    variable imm20_ext15: std_logic_vector(14 downto 0);
     variable imm6: std_logic_vector(5 downto 0);
 
    begin
@@ -89,14 +89,14 @@ begin
             --addi16sp -> addi x2, x2, nzimm[9:4].
             if rs1d = "00010" then
                 --addi16sp
-                imm12 := (11|10|9 => inst_i(12))&inst_i(12)&inst_i(4 downto 3)&inst_i(5)&inst_i(2)&inst_i(6)&"0000";
+                imm12 := (11|10|9 => inst_i(12))&inst_i(4 downto 3)&inst_i(5)&inst_i(2)&inst_i(6)&"0000";
                 inst_o <= imm12&"00010"&"000"&"00010"&"0110011";
             elsif rs1d = "00000" then
                 -- reserved
             else
                 -- lui
-                imm20_ext13 := (others=>inst_i(12));
-                imm20 := (imm20_ext13 & inst_i(12) & inst_i(6 downto 2));
+                imm20_ext15 := (others=>inst_i(12));
+                imm20 := (imm20_ext15 & inst_i(6 downto 2));
                 inst_o <= imm20 & rs1d&"0110111";
             end if;
 
@@ -107,11 +107,11 @@ begin
             if inst_i(11 downto 10) = "00" then
                 --c.srli expands to srli rd′,rd′, shamt[5:0],
                 imm6 := inst_i(12) & inst_i(6 downto 2);
-                inst_o <= "0000000"&imm6&rs1dp_dec&"101"&rs1dp_dec&"0010011";
+                inst_o <= "0000000"&imm6(4 downto 0)&rs1dp_dec&"101"&rs1dp_dec&"0010011";
             elsif inst_i(11 downto 10) = "01" then
                 --c.srai expands to srai rd′, rd′, shamt[5:0]
                 imm6 := inst_i(12) & inst_i(6 downto 2);
-                inst_o <= "0100000"&imm6&rs1dp_dec&"101"&rs1dp_dec&"0010011";
+                inst_o <= "0100000"&imm6(4 downto 0)&rs1dp_dec&"101"&rs1dp_dec&"0010011";
             elsif inst_i(11 downto 10) = "10" then
                 --c.andi expands to andi rd′, rd′, imm[5:0]
                 imm12 := imm12_ext6&inst_i(12) & inst_i(6 downto 2);
@@ -156,7 +156,7 @@ begin
             --slli
             --slli rd, rd, shamt[5:0]
             imm6 := inst_i(12) & inst_i(6 downto 2);
-            inst_o <= "0000000" & imm6(5 downto 0)&rs1d&"001"&rs1d&"0010011";
+            inst_o <= "0000000" & imm6(4 downto 0)&rs1d&"001"&rs1d&"0010011";
         elsif func3 = "001" then
             -- reserved
         elsif func3 = "010" then
@@ -189,7 +189,7 @@ begin
         elsif func3 = "110" then
             --swsp 
             -- sw rs2, offset[7:2](x2)
-            imm12 := "00000"&inst_i(8 downto 7)&inst_i(12 downto 9)&"00";
+            imm12 := "0000"&inst_i(8 downto 7)&inst_i(12 downto 9)&"00";
             inst_o <= imm12(11 downto 5) & rs2 & "00010"&"010"&imm12(4 downto 0)&"0100011";
 
         elsif func3 = "111" then
