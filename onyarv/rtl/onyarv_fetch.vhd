@@ -26,6 +26,14 @@ entity onyarv_fetch is
 end entity onyarv_fetch;
 
 architecture rtl of onyarv_fetch is
+
+    component onyarv_decompress is
+    port (
+        inst_i: in std_logic_vector(15 downto 0);
+        inst_o: out std_logic_vector(31 downto 0)
+    );
+    end component;
+
     -- ucache, single upper word
     signal cached_halfword: std_logic_vector(15 downto 0);
     signal cached_addr: std_logic_vector(31 downto 0);
@@ -36,29 +44,47 @@ architecture rtl of onyarv_fetch is
     signal is_waiting_for_data: std_logic;
     signal next_word_addr_unaligned: std_logic_vector(31 downto 0);
     signal next_word_addr: std_logic_vector(31 downto 0);
+
+    signal output_ready: std_logic;
+
+    signal compressed_instr: std_logic_vector(15 downto 0);
+    signal is_compressed: std_logic;
+    signal result_instr: std_logic_vector(31 downto 0);
+    signal decompressed_instr: std_logic_vector(31 downto 0);
    
 begin
+
+    decompress_inst: onyarv_decompress
+    port map(
+        inst_i => compressed_instr,
+        inst_o => decompressed_instr
+    );
 
    proc: process(clk_i, rst_i)
    begin
        if rst_i = '1' then
-           instr_o <= (others=>'0');
-           instr_len_o <= '1';
+           --instr_o <= (others=>'0');
+           result_instr <= (others=>'0');
+           is_compressed <= '0';
+           --instr_len_o <= '1';
            instr_valid_o <= '0';
            err_o <= '0';
            ucache_valid <= '0';
            is_waiting_for_data <= '0';
            ins_stb_o <= '0';
             ins_cyc_o <= '0';
+            output_ready <= '1';
        elsif rising_edge(clk_i) then
-        if load_i = '1' and is_waiting_for_data = '0' then
+       
+        if load_i = '1' and is_waiting_for_data = '0' and output_ready ='1' then
             instr_valid_o <= '0';
+            output_ready <= '0';
             if ucache_hit = '1' then
                 if cached_compressed = '1' then
                     --done, decompress
-                    --TODO
                     instr_valid_o <= '1';
-                    instr_o <= x"0000"&cached_halfword;
+                    is_compressed <= '1';
+                    compressed_instr <= cached_halfword;
                 else
                     --we have only the lower halfword, we need to fetch upper part
                     ins_stb_o <= '1';
@@ -85,7 +111,8 @@ begin
                 -- if cache is hit in second stage, that means that the instruction is 32 bit with lower halfword already cached
                 -- we have the upper word
                 instr_valid_o <= '1';
-                instr_o <= ins_dat_i(15 downto 0) & cached_halfword;
+                result_instr <= ins_dat_i(15 downto 0) & cached_halfword;
+                is_compressed <= '0';
                 ucache_valid <= '1';
                 cached_addr <= next_word_addr(31 downto 2) & "10";
                 cached_halfword <= ins_dat_i(31 downto 16);
@@ -97,21 +124,22 @@ begin
                         ucache_valid <= '1';
                         cached_addr <= next_word_addr(31 downto 2) & "10";
                         -- decompress lower and write to out 
-                        --TODO
                         instr_valid_o <= '1';
-                        instr_o <= x"0000"&ins_dat_i(15 downto 0);
+                        is_compressed <= '1';
+                        compressed_instr <= ins_dat_i(15 downto 0);
                     else
                         -- fetched valid address
                         instr_valid_o <= '1';
-                        instr_o <= ins_dat_i(31 downto 0);
+                        is_compressed <= '0';
+                        result_instr <= ins_dat_i(31 downto 0);
                     end if;
                 else -- instruction lsbits are in higher word
                     if ins_dat_i(17 downto 16) /= "11" then -- compressed
                         --valid compressed instruction in higher word
                         --decompress higher and write to out
-                        --TODO
                         instr_valid_o <= '1';
-                        instr_o <= x"0000"&ins_dat_i(31 downto 16);
+                        is_compressed <= '1';
+                        compressed_instr <= ins_dat_i(31 downto 16);
                     else
                         -- need to fetch another word to get higher word of instruction
                         -- cache current word
@@ -121,6 +149,9 @@ begin
                     end if;
                 end if;
             end if;
+        end if;
+        if load_i = '0' then
+            output_ready <= '1';
         end if;
 
        end if;
@@ -143,10 +174,8 @@ begin
     next_word_addr_unaligned <= std_logic_vector(unsigned(addr_i)+4);
     next_word_addr <= next_word_addr_unaligned(31 downto 2) & "00";
 
+    instr_o <= result_instr when is_compressed = '0' else decompressed_instr;
+    instr_len_o <= not  is_compressed;
+ 
 
-   
-   
-
-    
-    
 end architecture rtl;

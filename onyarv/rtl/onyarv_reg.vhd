@@ -7,9 +7,9 @@ entity onyarv_reg is
         rst_i: in std_logic;
         clk_i: in std_logic;
         wen_i: in std_logic;
-        src1_addr_i: in std_logic_vector(4 downto 0);
-        src2_addr_i: in std_logic_vector(4 downto 0);
-        dst_addr_i: in std_logic_vector(4 downto 0);
+        src1_addr_i: in unsigned(4 downto 0);
+        src2_addr_i: in unsigned(4 downto 0);
+        dst_addr_i: in unsigned(4 downto 0);
         src1_data_o: out std_logic_vector(31 downto 0);
         src2_data_o: out std_logic_vector(31 downto 0);
         dst_data_i: in std_logic_vector(31 downto 0)
@@ -28,10 +28,19 @@ begin
                 -- Regs are not reset           
             else
                 if wen_i = '1' then
-                    reg_file(to_integer(unsigned(dst_addr_i))) <= dst_data_i;
+                    reg_file(to_integer(dst_addr_i)) <= dst_data_i;
                 end if;
-                src1_data_o <= reg_file(to_integer(unsigned(src1_addr_i)));
-                src2_data_o <= reg_file(to_integer(unsigned(src2_addr_i)));
+                if src1_addr_i /= 0 then
+                    src1_data_o <= reg_file(to_integer(src1_addr_i));
+                else
+                    src1_data_o <= (others=>'0');
+                end if;
+
+                if src2_addr_i /= 0 then
+                    src2_data_o <= reg_file(to_integer(src2_addr_i));
+                else
+                    src2_data_o <= (others=>'0');
+                end if;
             end if;
         end if;
     end process beh;
