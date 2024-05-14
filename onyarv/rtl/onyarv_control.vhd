@@ -15,6 +15,7 @@ entity onyarv_control is
         shift_arith_o: out std_logic; -- 1 shifter does arithmetic shift, else logical
         alu_sub_o: out std_logic; -- 1 alu does sub instead of add
         shift_alu_op_o: out std_logic_vector(2 downto 0); -- alu/shifter op (funct3)
+        alu_en_o: out std_logic;
         rimm_o: out std_logic; -- 1 - second op is imm, 0 - second op is reg 
         res_valid_i: in std_logic; 
         -- Registers
@@ -23,7 +24,8 @@ entity onyarv_control is
         rs2_o: out unsigned(4 downto 0);
         red_wen_o: out std_logic;
         -- I Immediate used in ALU
-        i_imm_o: out unsigned(31 downto 0)
+        i_imm_o: out unsigned(31 downto 0);
+        alu_res_i: in std_logic_vector(31 downto 0)
     );
 end entity onyarv_control;
 
@@ -45,6 +47,8 @@ architecture rtl of onyarv_control is
     signal rs2 : std_logic_vector(4 downto 0);
     signal pc: unsigned(31 downto 0);
     signal instr_ready: std_logic;
+
+    signal next_pc: unsigned(31 downto 0);
 
     signal first_fetch_cyc: std_logic;
     
@@ -73,6 +77,7 @@ begin
             pc <= (others=>'0');
             red_wen_o <= '0';
             first_fetch_cyc <= '1';
+            alu_en_o <= '0';
         elsif rising_edge(clk_i) then
             if state=FETCH then
                 first_fetch_cyc <= '0';
@@ -97,34 +102,93 @@ begin
                 instr <= instr_i;
                 state <= DECODE;
             elsif state=DECODE then
-                if opcode = OPIMM_INSTR then
+                if opcode = JAL_INSTR then
+                    -- dummy signals for alu
+                    alu_sub_o <= '0';
+                    shift_alu_op_o <= "000";
+                    rimm_o <= '1';
+                elsif opcode = OPIMM_INSTR then
                     shift_arith_o <= instr(30);
-                    alu_sub_o <= instr(30);
+                    alu_sub_o <= '0';--instr(30);
                     shift_alu_op_o <= instr(14 downto 12);
                     rimm_o <= '1';
+                    alu_en_o <= '1';
                 elsif opcode = OP_INSTR then
                     shift_arith_o <= instr(30);
                     alu_sub_o <= instr(30);
                     shift_alu_op_o <= instr(14 downto 12);
                     rimm_o <= '0';
+                    alu_en_o <= '1';
+                elsif opcode = BRANCH_INSTR then
+                    if instr(14 downto 13) = "00" then -- eq/ne
+                        shift_arith_o <= instr(30);
+                        alu_sub_o <= '1';
+                        shift_alu_op_o <= "000";
+                        rimm_o <= '0';
+                        alu_en_o <= '1';
+                    elsif instr(14 downto 13) = "10" then -- lt, ge
+                        shift_arith_o <= instr(30);
+                        alu_sub_o <= '0';
+                        shift_alu_op_o <= "010"; --slt
+                        rimm_o <= '0';
+                        alu_en_o <= '1';
+                    else -- ltu/geu
+                        shift_arith_o <= instr(30);
+                        alu_sub_o <= '0';
+                        shift_alu_op_o <= "011"; --slt
+                        rimm_o <= '0';
+                        alu_en_o <= '1';
+                    end if;
                 end if;
 
                 state<= EXECUTE;
             elsif state=EXECUTE then
-                if res_valid_i = '1' then
+
+                alu_en_o <= '0';
+                
+                if (instr_len_i = '1') then
+                    next_pc <= pc+4;
+                else
+                    next_pc <= pc+2;
+                end if;
+
+                if opcode = JAL_INSTR then
+                    next_pc <= pc + unsigned(j_imm);
+                end if; 
+
+                if opcode = JALR_INSTR then
+                    next_pc <= pc + unsigned(i_imm);
+                end if; 
+
+                if opcode = BRANCH_INSTR then
+                    if instr(14 downto 13) = "00" then -- eq/ne
+                        if (instr(12) = '0' and alu_res_i = x"00000000") or (instr(12) = '1' and alu_res_i /= x"00000000") then
+                            next_pc <= pc + unsigned(b_imm);        
+                        end if;
+                    elsif instr(14 downto 13) = "10" then -- lt, ge
+                        if (instr(12) = '0' and alu_res_i = x"00000001") or (instr(12) = '1' and alu_res_i /= x"00000001") then
+                            next_pc <= pc + unsigned(b_imm);        
+                        end if;
+                    else -- ltu/geu
+                        if (instr(12) = '0' and alu_res_i = x"00000001") or (instr(12) = '1' and alu_res_i /= x"00000001") then
+                            next_pc <= pc + unsigned(b_imm);        
+                        end if;
+                    end if;
+
+                end if;
+
+                
+                if res_valid_i = '1' and (opcode = OPIMM_INSTR or opcode = OP_INSTR) then
                     state <= WB;
                     red_wen_o <= '1';
+                elsif (opcode /= OPIMM_INSTR and opcode /= OP_INSTR) then
+                    state <= WB;
                 end if;
             elsif state=WB then 
                 state <= FETCH;
                 red_wen_o <= '0';
                 instr_ready <= '1';
-
-                if (instr_len_i = '1') then
-                    pc <= pc+4;
-                else
-                    pc <= pc+2;
-                end if;
+                pc <= next_pc;
                 
                 first_fetch_cyc <= '1';
             elsif state=TRAP then
@@ -150,6 +214,7 @@ begin
     rs2_o <= unsigned(rs2);
     -- I Immediate used in alu
     i_imm_o <= unsigned(i_imm);
+
 
     -- Load opcode
     opcode <= instr(6 downto 0);

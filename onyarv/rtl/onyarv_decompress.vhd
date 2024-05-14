@@ -54,8 +54,8 @@ architecture rtl of onyarv_decompress is
 
 begin
     --decode compressed regs
-    --rs1dp_dec <= "01" & rs1dp;
-    --rs2p_dec <= "01" & rs2p;
+    rs1dp_dec <= "01" & inst_i(9 downto 7);
+    rs2p_dec <= "01" & inst_i(4 downto 2);
     --rdp_dec <= "01" & rs2p;
     
 
@@ -146,7 +146,7 @@ end function to_hstring;
             dbg_compressed_instr <= c_addi;
             imm12_ext6 := (others=>inst_i(12));
             imm12 := imm12_ext6&inst_i(12) & inst_i(6 downto 2);
-            inst_o <= imm12&rs1d&"000"&rs1d&"0110011";
+            inst_o <= imm12&rs1d&"000"&rs1d&"0010011";
 
         elsif func3 = "001" then
             --jal 
@@ -225,7 +225,7 @@ end function to_hstring;
             --c.j expands to jal x0, offset[11:1]
             dbg_compressed_instr <= c_j;
             imm20_ext9 := (others=>inst_i(12));
-            imm20 := imm20_ext9 & (inst_i(12)) & inst_i(8) & inst_i(10 downto 9) & inst_i(6) & inst_i(7) & inst_i(2) & inst_i(11) & inst_i(5 downto 3);
+            imm20 := imm20_ext9 & inst_i(12) & inst_i(8) & inst_i(10 downto 9) & inst_i(6) & inst_i(7) & inst_i(2) & inst_i(11) & inst_i(5 downto 3);
             inst_o <= imm20(19) & imm20(9 downto 0) & imm20(10) & imm20(18 downto 11) & "00000"&"1101111";
         elsif func3 = "110" then
             --beqz

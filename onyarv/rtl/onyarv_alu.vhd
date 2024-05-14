@@ -12,6 +12,7 @@ entity onyarv_alu is
         shift_arith_i: in std_logic; -- 1 shift arith, 0 shift log
         alu_sub_i: in std_logic; -- 1 sub, 0 - add
         op_i: in std_logic_vector(2 downto 0);
+        alu_en_i: in std_logic;
         res_o: out std_logic_vector(31 downto 0);
         res_valid_o: out std_logic
     );
@@ -39,7 +40,7 @@ begin
         if rst_i = '1' then
             shifter_busy <= '0';
         elsif rising_edge(clk_i) then
-            if shifter_busy = '0' then
+            if shifter_busy = '0' and alu_en_i='1' then
             case op_i is
                 when OP_SUB_ADD =>
                     if alu_sub_i = '1' then
@@ -122,40 +123,42 @@ begin
                 when others =>
                     
             end case;
-        else
-            -- shifter op
-            if dir = '0' then -- shift left
-                if shamt = 1 then -- last op
-                    res_o <= shifter(30 downto 0) & '0';
-                    shamt <= "00000";
-                    shifter_busy <= '0';
-                    res_valid_o <= '1';
+            elsif shifter_busy = '0' then
+                -- shifter op
+                if dir = '0' then -- shift left
+                    if shamt = 1 then -- last op
+                        res_o <= shifter(30 downto 0) & '0';
+                        shamt <= "00000";
+                        shifter_busy <= '0';
+                        res_valid_o <= '1';
+                    else
+                        shifter <= shifter(30 downto 0) & '0';
+                        shamt <= shamt-1;
+                    end if;
                 else
-                    shifter <= shifter(30 downto 0) & '0';
-                    shamt <= shamt-1;
+                    if shamt = 1 then -- last op
+                        if arith = '1' then
+                            -- arith shift
+                            res_o <= shifter(31) & shifter(31 downto 1);
+                        else
+                            res_o <= '0' & shifter(31 downto 1);
+                        end if;
+                        shamt <= "00000";
+                        shifter_busy <= '0';
+                        res_valid_o <= '1';
+                    else
+                        if arith = '1' then
+                            -- arith shift
+                            shifter <= shifter(31) & shifter(31 downto 1);
+                        else
+                            shifter <= '0' & shifter(31 downto 1);
+                        end if;
+                        shamt <= shamt-1;
+                    end if;
                 end if;
             else
-                if shamt = 1 then -- last op
-                    if arith = '1' then
-                        -- arith shift
-                        res_o <= shifter(31) & shifter(31 downto 1);
-                    else
-                        res_o <= '0' & shifter(31 downto 1);
-                    end if;
-                    shamt <= "00000";
-                    shifter_busy <= '0';
-                    res_valid_o <= '1';
-                else
-                    if arith = '1' then
-                        -- arith shift
-                        shifter <= shifter(31) & shifter(31 downto 1);
-                    else
-                        shifter <= '0' & shifter(31 downto 1);
-                    end if;
-                    shamt <= shamt-1;
-                end if;
+             -- no new op to do, keep old op
             end if;
-        end if;
 
         end if;
     end process core;

@@ -48,6 +48,7 @@ architecture rtl of onyarv_cpu is
         shift_arith_o: out std_logic; -- 1 shifter does arithmetic shift, else logical
         alu_sub_o: out std_logic; -- 1 alu does sub instead of add
         shift_alu_op_o: out std_logic_vector(2 downto 0); -- alu/shifter op (funct3)
+        alu_en_o: out std_logic;
         rimm_o: out std_logic; -- 1 - second op is imm, 0 - second op is reg 
         res_valid_i: in std_logic;
         -- Registers
@@ -56,7 +57,8 @@ architecture rtl of onyarv_cpu is
         rs2_o: out unsigned(4 downto 0);
         red_wen_o: out std_logic;
         -- I Immediate used in ALU
-        i_imm_o: out unsigned(31 downto 0)
+        i_imm_o: out unsigned(31 downto 0);
+        alu_res_i: in std_logic_vector(31 downto 0)
     );
     end component;
 
@@ -89,6 +91,7 @@ architecture rtl of onyarv_cpu is
         shift_arith_i: in std_logic; -- 1 shift arith, 0 shift log
         alu_sub_i: in std_logic; -- 1 sub, 0 - add
         op_i: in std_logic_vector(2 downto 0);
+        alu_en_i: in std_logic;
         res_o: out std_logic_vector(31 downto 0);
         res_valid_o: out std_logic
     );
@@ -137,6 +140,8 @@ architecture rtl of onyarv_cpu is
     signal src1_data: std_logic_vector(31 downto 0);
     signal src2_data: std_logic_vector(31 downto 0);
 
+    signal alu_en: std_logic;
+
 begin
 
     fetch_inst: onyarv_fetch
@@ -168,13 +173,15 @@ begin
       shift_arith_o  => shift_arith,
       alu_sub_o      => alu_sub,
       shift_alu_op_o => funct3,
+      alu_en_o       => alu_en,
       res_valid_i => alu_res_valid,
       rimm_o         => reg_imm,
       rd_o           => rd,
       rs1_o          => rs1,
       rs2_o          => rs2,
       red_wen_o      => reg_wen,
-      i_imm_o        => i_imm
+      i_imm_o        => i_imm,
+      alu_res_i      => alu_result
     );
 
     alu_inst: onyarv_alu port map (
@@ -185,6 +192,7 @@ begin
         shift_arith_i => shift_arith,
         alu_sub_i => alu_sub,
         op_i => funct3,
+        alu_en_i => alu_en,
         res_o => alu_result,
         res_valid_o => alu_res_valid
     );

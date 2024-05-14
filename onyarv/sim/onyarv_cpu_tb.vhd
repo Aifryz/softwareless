@@ -55,7 +55,17 @@ architecture tb of onyarv_cpu_tb is
 
     constant CLK_PERIOD: time := 10 ns;
 
-    type mem_arr is array(0 to 5) of std_logic_vector(31 downto 0);
+    type mem_arr is array(0 to 255) of std_logic_vector(31 downto 0);
+
+    -- Swap order to halfworlds
+    -- Used to define instructions so that lower PC instructions appear in code first
+    function halfswap(
+        a: in std_logic_vector(15 downto 0);
+        b: in std_logic_vector(15 downto 0))
+        return std_logic_vector is
+    begin
+        return b&a;
+    end function halfswap;
 
 begin
     clk_i <= not clk_i after CLK_PERIOD/2;
@@ -107,24 +117,72 @@ begin
         "000000000101" & "00010" & "000" & "00100" & "0010011", 
         
         -- compressed part
-        -- c.li r1, 1
-        -- c.li r2, 2
-        "010" & "0" & "00010" & "00010" & "01"&
-        "010" & "0" & "00001" & "00001" & "01", 
+        halfswap(
+        "010" & "0" & "00001" & "00001" & "01",  -- c.li r1, 1
+        "010" & "0" & "00010" & "00010" & "01"), -- c.li r2, 2
+        halfswap(
+        "100" & "1" & "00001" & "00010" & "10",  -- c.add r1, r2
+        "000" & "0" & "00010" & "00101" & "01"), -- c.addi r2, 5
+        halfswap(
+        "010" & "0" & "01010" & "00111" & "01",  --   c.li x10, 7
+                                                 -- loop:
+        "110" & "000" & "010" & "00110" & "01"), --   c.beqz done (+6)
+        halfswap(
+        "000" & "1" & "01010" & "11111" & "01", --    c.addi x10, -1
+        "101" & "11111111101" & "01"),          --    c.j loop (-4)
+        halfswap(
+        "010" & "0" & "01010" & "01010" & "01", --    c.li x10, 10
+        "0000000000000001"),                     --    c. nop
+
+        -- function calls section
+        -- jump 0x0001 0000
+        --c.lui 0x00010000, clip bottom bits
+        --c.lui t1, 0x00010
+        -- c.jalr, t1
+        -- here should be the return code
+        -- c.mv t6, a0
+
+        halfswap(
+        "010" & "0" & "01010" & "10001" & "01",  --    c.li a0/, 17
+        "011" & "0" & "00110" & "00010" & "01"),  --   c.lui t1, 0x00010 [000]
+        halfswap(
+        "100" & "1" & "00110" & "00000" & "10",  --    c.jalr, t1
+        "100" & "0" & "11111" & "01010" & "10"),  --   c.mv t6, a0
+
+        others => x"00010001"
         
-        -- c.add r1, r2
-        -- c.addi r2, 5
-        "000" & "0" & "00010" & "00101" & "01"&
-        "100" & "1" & "00001" & "00010" & "10" 
-        
+    ); 
+
+    variable hi_mem: mem_arr := (
+        -- 0x0001 0000: add3
+        -- c.addi a0, 3
+        -- c.ret (c.jr x1)
+
+        -- 0x0001 0004: fib_iter
+        -- slti a2, 2
+        -- c.beqz fib_iter_loop
+
+        -- c.mv a1, a0 ; copy arg
+        -- 
+        -- fib_iter_end:
+        -- c.ret (c.jr x1)
+
+        others => x"00010001"
     );
     variable adr: integer;
+    constant hi_mem_start:integer := 16#00010000#;
    begin
     wait until rising_edge(clk_i);
         if rst_i = '0' then
             if ins_stb_o = '1' then
-                adr := to_integer(unsigned(ins_adr_o(5 downto 2)));
-                ins_dat_i <= std_logic_vector(mem(adr));
+                adr := to_integer(unsigned(ins_adr_o(20 downto 2)));
+                if adr < 256 then  -- low mem
+                    ins_dat_i <= std_logic_vector(mem(adr));
+                elsif adr >= hi_mem_start  and adr < hi_mem_start+256 then 
+                    ins_dat_i <= std_logic_vector(mem(adr-hi_mem_start));
+                else
+                    ins_dat_i <= x"00010001"; --c.nop
+                end if;
                 ins_ack_i <= '1';
             else
                 ins_ack_i <= '0';
