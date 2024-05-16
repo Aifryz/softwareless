@@ -46,8 +46,6 @@ begin
         res_valid_o => res_valid_o
     );
 
-    
-
     proc_name: process
     begin
         shift_arith_i <= '0';
