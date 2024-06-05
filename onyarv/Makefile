@@ -16,7 +16,7 @@ sim: $(sources) $(sim_sources)
 cpu_sim: $(sources) $(sim_sources)
 	$(GHDL) -a $(sources) $(sim_sources)
 	$(GHDL) -e onyarv_cpu_tb
-	$(GHDL) -r onyarv_cpu_tb --stop-time=10us --wave=cpu.ghw
+	$(GHDL) -r onyarv_cpu_tb --stop-time=20us --wave=cpu.ghw
 
 alu_sim: $(sources) $(sim_sources)
 	$(GHDL) -a $(sources) $(sim_sources)

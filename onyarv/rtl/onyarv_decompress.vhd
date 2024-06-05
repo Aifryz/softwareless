@@ -265,8 +265,8 @@ end function to_hstring;
             if inst_i(12) = '0' and rs1d /= "00000" and rs2 = "00000" then
                 --C.JR expands to jalr x0, 0(rs1).
                 dbg_compressed_instr <= c_jr;
-                inst_o <= "000000000000"&rs1dp_dec&"000"&"00000"&"1100111";
-            elsif inst_i(12) = '0' and rs1d = "00000" and rs2 /= "00000" then
+                inst_o <= "000000000000"&rs1d&"000"&"00000"&"1100111";
+            elsif inst_i(12) = '0' and rs1d /= "00000" and rs2 /= "00000" then
                 --c.mv add rd, x0, rs2
                 dbg_compressed_instr <= c_mv;
                 inst_o <= "0000000"&rs2&"00000"&"000"&rs1d&"0110011";

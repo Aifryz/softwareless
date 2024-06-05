@@ -128,8 +128,11 @@ architecture rtl of onyarv_cpu is
     signal instr_ready: std_logic;
 
     signal next_pc: unsigned(31 downto 0);
+    signal return_addr: std_logic_vector(31 downto 0);
+    signal dst_reg_data: std_logic_vector(31 downto 0);
 
     signal first_fetch_cyc: std_logic;
+    signal late_alu: std_logic;
     
     -- Sign extension
     signal imm_sign_ext: std_logic_vector(31 downto 11);
@@ -188,7 +191,7 @@ begin
         dst_addr_i => rd,
         src1_data_o => src1_data,
         src2_data_o => src2_data,
-        dst_data_i => alu_result
+        dst_data_i => dst_reg_data
     );
 
     --Instruction load process, load instruction to instr if we are in FD state and predecode them
@@ -202,6 +205,7 @@ begin
             first_fetch_cyc <= '1';
             alu_en <= '0';
             do_instr_load <= '1';
+            late_alu <= '0';
         elsif rising_edge(clk_i) then
             if state=FETCH then
                 first_fetch_cyc <= '0';
@@ -251,6 +255,7 @@ begin
                     reg_imm <= '0';
                     alu_en <= '1';
                 elsif opcode = BRANCH_INSTR then
+                    late_alu <= '1';
                     if instr(14 downto 13) = "00" then -- eq/ne
                         shift_arith <= instr(30);
                         alu_sub <= '1';
@@ -279,16 +284,18 @@ begin
                 
                 if (instr_len = '1') then
                     next_pc <= pc+4;
+                    return_addr <= std_logic_vector(pc+4);
                 else
                     next_pc <= pc+2;
+                    return_addr <= std_logic_vector(pc+2);
                 end if;
 
                 if opcode = JAL_INSTR then
-                    next_pc <= pc + unsigned(j_imm); -- maybe signed?
+                    next_pc <= unsigned(signed(pc) + signed(j_imm)); 
                 end if; 
-
+ 
                 if opcode = JALR_INSTR then
-                    next_pc <= pc + unsigned(i_imm) + unsigned(src1_data);  -- maybe signed? also need to remove last bit
+                    next_pc <= unsigned(i_imm) + unsigned(src1_data);  -- maybe signed? also need to remove last bit
                 end if; 
 
                 if opcode = BRANCH_INSTR then
@@ -307,13 +314,22 @@ begin
                     end if;
 
                 end if;
-
                 
                 if alu_res_valid = '1' and (opcode = OPIMM_INSTR or opcode = OP_INSTR or opcode = LUI_INSTR) then
                     state <= WB;
                     reg_wen <= '1';
+                elsif opcode = BRANCH_INSTR then
+                    if(late_alu = '0') then
+                        state <= WB;
+                    end if;
                 elsif (opcode /= OPIMM_INSTR and opcode /= OP_INSTR and opcode /= LUI_INSTR) then
                     state <= WB;
+                end if;
+                late_alu <= '0';
+
+
+                if opcode = JAL_INSTR or opcode = JALR_INSTR then
+                    reg_wen <= '1';
                 end if;
             elsif state=WB then 
                 state <= FETCH;
@@ -323,6 +339,7 @@ begin
                 
                 first_fetch_cyc <= '1';
                 do_instr_load <= '1';
+                
             elsif state=TRAP then
             end if;
 
@@ -330,8 +347,9 @@ begin
         end if;
     end process instr_load; 
 
-    arg1 <= src1_data;
+    arg1 <= src1_data when opcode /= LUI_INSTR else (others=> '0');
     arg2 <= src2_data when reg_imm = '0' else alu_imm;
+    dst_reg_data <= alu_result when (opcode /= JAL_INSTR and opcode /= JALR_INSTR) else return_addr;
 
     imm_sign_ext <= (others=>instr(31));
 
