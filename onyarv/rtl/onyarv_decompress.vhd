@@ -125,7 +125,7 @@ end function to_hstring;
         elsif func3 = "010" then
             -- c.lw, expands to lw rd ′, offset[6:2](rs1 ′)
             dbg_compressed_instr <= c_lw;
-            imm6 := inst_i(5)&inst_i(12 downto 10)&inst_i(6);
+            imm6 := "0"&inst_i(5)&inst_i(12 downto 10)&inst_i(6);
             imm12 := "0000"&imm6&"00";
             inst_o <= imm12&rs1dp_dec&"010"&rdp_dec&"0000011";
         elsif func3 = "100" then
@@ -134,7 +134,7 @@ end function to_hstring;
             -- c.sw
             -- expands to sw rs2 ′, offset[6:2](rs1 ′)
             dbg_compressed_instr <= c_sw;
-            imm6 := inst_i(5)&inst_i(12 downto 10)&inst_i(6);
+            imm6 := "0"&inst_i(5)&inst_i(12 downto 10)&inst_i(6);
             imm12 := "0000"&imm6&"00";
             inst_o <= imm12(11 downto 5)&rs2p_dec&rs1dp_dec&"010"&imm12(4 downto 0)&"0100011";
         end if;

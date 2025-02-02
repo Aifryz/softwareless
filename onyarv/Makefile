@@ -33,5 +33,10 @@ decompress_sim:
 	$(GHDL) -e onyarv_decompress_tb
 	$(GHDL) -r onyarv_decompress_tb --stop-time=10us --wave=decompress.ghw
 
+decompress_auto_sim:
+	$(GHDL) -a rtl/onyarv_decompress.vhd sim/onyarv_decompress_auto_tb.vhd
+	$(GHDL) -e onyarv_decompress_auto_tb
+	$(GHDL) -r onyarv_decompress_auto_tb --stop-time=100us --wave=decompress_auto.ghw
+
 .PHONY: clean 
 clean:
